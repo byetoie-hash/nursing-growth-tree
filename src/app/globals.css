@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+.dark { color-scheme: dark; }
+
+html, body { height: 100%; }
+
+body {
+  @apply font-body antialiased text-slate-800 dark:text-slate-100 bg-cream-100 dark:bg-slate-950;
+}
+
+/* ---------- Glassmorphism ---------- */
+.glass {
+  @apply bg-white/60 dark:bg-slate-900/50 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-glass;
+}
+.glass-strong {
+  @apply bg-white/80 dark:bg-slate-900/70 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-glass;
+}
+
+/* ---------- Form controls ---------- */
+.field {
+  @apply w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80
+         px-3.5 py-2.5 text-sm outline-none transition
+         focus:border-canopy-400 focus:ring-2 focus:ring-canopy-200 dark:focus:ring-canopy-800
+         placeholder:text-slate-400;
+}
+.label { @apply mb-1.5 block text-sm font-medium text-slate-600 dark:text-slate-300; }
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold
+         transition active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2;
+}
+.btn-primary { @apply btn bg-canopy-600 text-white hover:bg-canopy-700 focus-visible:outline-canopy-600 shadow-leaf; }
+.btn-soft    { @apply btn glass text-canopy-800 dark:text-canopy-100 hover:bg-white/80 dark:hover:bg-slate-800/70; }
+.btn-pink    { @apply btn bg-blossom-400 text-white hover:bg-blossom-500 focus-visible:outline-blossom-400; }
+
+/* ---------- Scrollbar อ่อน ๆ ---------- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { @apply rounded-full bg-canopy-300/60 dark:bg-canopy-700/60; }
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+
+/* ---------- การ์ด Dashboard (The Nursing Growth Tree) ---------- */
+.card {
+  @apply rounded-3xl bg-white/85 dark:bg-slate-900/70 border border-cream-200 dark:border-white/10
+         shadow-[0_6px_24px_rgba(90,120,80,0.10)] backdrop-blur-sm;
+}
+.card-title { @apply font-display text-sm font-semibold text-canopy-800 dark:text-canopy-100; }
+.chip { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium; }
