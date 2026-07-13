@@ -17,9 +17,9 @@ const STATUS_CHIP: Record<ComplaintStatus, { text: string; cls: string }> = {
 
 export default function RecentFeed({ items }: { items: FeedItem[] }) {
   return (
-    <aside className="card flex min-h-0 flex-col p-4">
+    <aside className="card flex min-h-0 flex-col p-4 lg:h-0 lg:min-h-full">
       <h2 className="card-title mb-2 flex items-center gap-1.5"><span aria-hidden>🍃</span> เรื่องราวล่าสุด</h2>
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1 max-h-[420px] lg:max-h-none">
         {items.length === 0 && (
           <p className="py-8 text-center text-xs text-slate-400">
             ยังไม่มีเรื่องราว — เป็นคนแรกที่ปลูกใบไม้ให้ต้นนี้ 🌱
