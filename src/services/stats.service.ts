@@ -37,8 +37,8 @@ export async function getTreeSnapshot(departmentId?: string): Promise<TreeSnapsh
         branchIndex: p.branchIndex, branchT: p.branchT, createdAt: p.createdAt.toISOString(),
       })),
     ],
-    rewards: rewards.map((r: { id: string; kind: RewardKind; anchor: number }) => ({
-      id: r.id, kind: r.kind, anchor: r.anchor,
+    rewards: rewards.map((r: { id: string; kind: string; anchor: number }) => ({
+      id: r.id, kind: r.kind as RewardKind, anchor: r.anchor,
     })),
   };
 }
@@ -65,7 +65,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   byCategory.forEach((c: { category: PraiseCategory; _count: number }) => { catCount[c.category] = c._count; });
 
   const rewardCount = { ROOT: 0, FLOWER: 0, FRUIT: 0 };
-  rewards.forEach((r: { kind: RewardKind; _count: number }) => { rewardCount[r.kind] = r._count; });
+  rewards.forEach((r: { kind: string; _count: number }) => { rewardCount[r.kind as RewardKind] = r._count; });
 
   // เวลาตอบสนองเฉลี่ย (ชั่วโมง) = created → resolved
   const avgResponseHours = resolved.length
@@ -159,7 +159,7 @@ export async function getPublicDashboard(departmentId?: string): Promise<PublicD
   });
 
   const rewardCount = { FLOWER: 0, FRUIT: 0, ROOT: 0 };
-  rewards.forEach((r: { kind: RewardKind; _count: number }) => { rewardCount[r.kind] = r._count; });
+  rewards.forEach((r: { kind: string; _count: number }) => { rewardCount[r.kind as RewardKind] = r._count; });
 
   const thisMonth = thisMonthC + thisMonthP;
   const prevMonth = prevMonthC + prevMonthP;
