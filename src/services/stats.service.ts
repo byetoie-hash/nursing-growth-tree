@@ -10,22 +10,20 @@ type Ranked = { name: string; complaints: number; praises: number };
  *  departmentId: ระบุ = ต้นของหน่วยงานนั้น (เฉพาะใบ) / ไม่ระบุ = ต้นหลักรวมทุกใบ + rewards */
 export async function getTreeSnapshot(departmentId?: string): Promise<TreeSnapshot> {
   const deptWhere = departmentId ? { departmentId } : {};
-  const [complaints, praises, rewards] = await Promise.all([
-    prisma.complaint.findMany({
-      where: deptWhere,
-      select: { id: true, kind: true, status: true, branchIndex: true, branchT: true, createdAt: true, departmentId: true },
-      orderBy: { createdAt: 'asc' },
-      take: 500,
-    }),
-    prisma.praise.findMany({
-      where: deptWhere,
-      select: { id: true, category: true, branchIndex: true, branchT: true, createdAt: true, departmentId: true },
-      orderBy: { createdAt: 'asc' },
-      take: 500,
-    }),
-    // rewards (ราก/ดอก/ผล) แสดงเฉพาะต้นหลักของกองการพยาบาล
-    departmentId ? Promise.resolve([]) : prisma.treeReward.findMany({ select: { id: true, kind: true, anchor: true } }),
-  ]);
+  const complaints = await prisma.complaint.findMany({
+    where: deptWhere,
+    select: { id: true, kind: true, status: true, branchIndex: true, branchT: true, createdAt: true, departmentId: true },
+    orderBy: { createdAt: 'asc' },
+    take: 500,
+  });
+  const praises = await prisma.praise.findMany({
+    where: deptWhere,
+    select: { id: true, category: true, branchIndex: true, branchT: true, createdAt: true, departmentId: true },
+    orderBy: { createdAt: 'asc' },
+    take: 500,
+  });
+  // rewards (ราก/ดอก/ผล) แสดงเฉพาะต้นหลักของกองการพยาบาล
+  const rewards = departmentId ? [] : await prisma.treeReward.findMany({ select: { id: true, kind: true, anchor: true } });
   return {
     leaves: [
       ...complaints.map((c: LeafRow & { status: ComplaintStatus; kind: 'COMPLAINT' | 'SUGGESTION'; departmentId: string | null }) => ({
@@ -44,18 +42,17 @@ export async function getTreeSnapshot(departmentId?: string): Promise<TreeSnapsh
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const [byStatus, byCategory, rewards, resolved, departments] = await Promise.all([
-    prisma.complaint.groupBy({ by: ['status'], _count: true }),
-    prisma.praise.groupBy({ by: ['category'], _count: true }),
-    prisma.treeReward.groupBy({ by: ['kind'], _count: true }),
-    prisma.complaint.findMany({
-      where: { resolvedAt: { not: null } },
-      select: { createdAt: true, resolvedAt: true },
-    }),
-    prisma.department.findMany({
-      include: { _count: { select: { complaints: true, praises: true } } },
-    }),
-  ]);
+  // sequential — เสถียรบน serverless แม้ pool มีคอนเนกชันเดียว
+  const byStatus = await prisma.complaint.groupBy({ by: ['status'], _count: true });
+  const byCategory = await prisma.praise.groupBy({ by: ['category'], _count: true });
+  const rewards = await prisma.treeReward.groupBy({ by: ['kind'], _count: true });
+  const resolved = await prisma.complaint.findMany({
+    where: { resolvedAt: { not: null } },
+    select: { createdAt: true, resolvedAt: true },
+  });
+  const departments = await prisma.department.findMany({
+    include: { _count: { select: { complaints: true, praises: true } } },
+  });
 
   const statusCount = { NEW: 0, IN_PROGRESS: 0, RESOLVED: 0 };
   byStatus.forEach((s: { status: ComplaintStatus; _count: number }) => { statusCount[s.status] = s._count; });
@@ -78,10 +75,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   // ยอดรายเดือน 6 เดือนล่าสุด
   const since = new Date(); since.setMonth(since.getMonth() - 5); since.setDate(1);
-  const [cMonthly, pMonthly] = await Promise.all([
-    prisma.complaint.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
-    prisma.praise.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
-  ]);
+  const cMonthly = await prisma.complaint.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } });
+  const pMonthly = await prisma.praise.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } });
   const monthKey = (d: Date) => d.toLocaleDateString('th-TH', { month: 'short', year: '2-digit' });
   const months: string[] = [];
   for (let i = 5; i >= 0; i--) {
@@ -119,34 +114,34 @@ export async function getPublicDashboard(departmentId?: string): Promise<PublicD
   const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
   const prevStart = new Date(monthStart); prevStart.setMonth(prevStart.getMonth() - 1);
 
-  const [praiseByCat, careByStatus, rewards, suggestionTotal,
-    thisMonthC, thisMonthP, prevMonthC, prevMonthP,
-    topPraises, recentPraises, recentFeedback] = await Promise.all([
-    prisma.praise.groupBy({ by: ['category'], _count: true, where: dept }),
-    prisma.complaint.groupBy({ by: ['status'], _count: true, where: { kind: 'COMPLAINT', ...dept } }),
-    prisma.treeReward.groupBy({ by: ['kind'], _count: true }),
-    prisma.complaint.count({ where: { kind: 'SUGGESTION', ...dept } }),
-    prisma.complaint.count({ where: { createdAt: { gte: monthStart }, ...dept } }),
-    prisma.praise.count({ where: { createdAt: { gte: monthStart }, ...dept } }),
-    prisma.complaint.count({ where: { createdAt: { gte: prevStart, lt: monthStart }, ...dept } }),
-    prisma.praise.count({ where: { createdAt: { gte: prevStart, lt: monthStart }, ...dept } }),
-    departmentId ? Promise.resolve([]) : prisma.praise.groupBy({
-      by: ['departmentId'], _count: true,
-      where: { createdAt: { gte: monthStart }, departmentId: { not: null } },
-      orderBy: { _count: { departmentId: 'desc' } }, take: 3,
-    }),
-    prisma.praise.findMany({
-      where: dept, include: { department: true }, orderBy: { createdAt: 'desc' }, take: 6,
-    }),
-    prisma.complaint.findMany({
-      where: dept,
-      select: {
-        id: true, kind: true, category: true, status: true, isAnonymous: true,
-        senderName: true, createdAt: true, department: { select: { name: true } },
-      },
-      orderBy: { createdAt: 'desc' }, take: 6,
-    }),
-  ]);
+  // ยิงฐานข้อมูลทีละคำสั่ง (sequential) — เสถียรบน serverless แม้ pool มีคอนเนกชันเดียว
+  const praiseByCat = await prisma.praise.groupBy({ by: ['category'], _count: true, where: dept });
+  const careByStatus = await prisma.complaint.groupBy({ by: ['status'], _count: true, where: { kind: 'COMPLAINT', ...dept } });
+  const rewards = await prisma.treeReward.groupBy({ by: ['kind'], _count: true });
+  const suggestionTotal = await prisma.complaint.count({ where: { kind: 'SUGGESTION', ...dept } });
+  // นับตั้งแต่ต้นเดือนก่อนครั้งเดียว แล้วหักลบเป็นเดือนนี้/เดือนก่อน (ลดจำนวนคำสั่งลงครึ่งหนึ่ง)
+  const cSincePrev = await prisma.complaint.count({ where: { createdAt: { gte: prevStart }, ...dept } });
+  const thisMonthC = await prisma.complaint.count({ where: { createdAt: { gte: monthStart }, ...dept } });
+  const pSincePrev = await prisma.praise.count({ where: { createdAt: { gte: prevStart }, ...dept } });
+  const thisMonthP = await prisma.praise.count({ where: { createdAt: { gte: monthStart }, ...dept } });
+  const prevMonthC = cSincePrev - thisMonthC;
+  const prevMonthP = pSincePrev - thisMonthP;
+  const topPraises = departmentId ? [] : await prisma.praise.groupBy({
+    by: ['departmentId'], _count: true,
+    where: { createdAt: { gte: monthStart }, departmentId: { not: null } },
+    orderBy: { _count: { departmentId: 'desc' } }, take: 3,
+  });
+  const recentPraises = await prisma.praise.findMany({
+    where: dept, include: { department: true }, orderBy: { createdAt: 'desc' }, take: 6,
+  });
+  const recentFeedback = await prisma.complaint.findMany({
+    where: dept,
+    select: {
+      id: true, kind: true, category: true, status: true, isAnonymous: true,
+      senderName: true, createdAt: true, department: { select: { name: true } },
+    },
+    orderBy: { createdAt: 'desc' }, take: 6,
+  });
 
   const praise = { total: 0, SERVICE_BEHAVIOR: 0, GENERAL_SERVICE: 0 };
   praiseByCat.forEach((c: { category: PraiseCategory; _count: number }) => {
