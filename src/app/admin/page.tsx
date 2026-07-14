@@ -11,6 +11,7 @@ import Charts from '@/components/admin/Charts';
 import ComplaintBoard from '@/components/admin/ComplaintBoard';
 import ComplaintDetail from '@/components/admin/ComplaintDetail';
 import DepartmentManager from '@/components/admin/DepartmentManager';
+import DataPurge from '@/components/admin/DataPurge';
 import { useTheme } from '@/app/providers';
 import type { AdminComplaint, ComplaintStatus, DashboardStats } from '@/types';
 
@@ -127,6 +128,9 @@ export default function AdminDashboardPage() {
 
             {/* จัดการหน่วยงาน + ตั้งค่าองค์กร (ไม่ต้องแก้โค้ด) */}
             <DepartmentManager />
+
+            {/* ปิดรอบข้อมูล */}
+            <DataPurge onPurged={() => load()} />
           </>
         )}
       </div>

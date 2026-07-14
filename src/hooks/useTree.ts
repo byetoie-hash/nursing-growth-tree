@@ -49,6 +49,14 @@ export function useTree(onPraiseClick: (id: string) => void, theme: 'light' | 'd
           const r = payload.reward as { kind: RewardKind; anchor: number };
           engine.addReward(r.kind, r.anchor);
         }
+        if (payload.type === 'RESET') {
+          // ปิดรอบข้อมูล — ล้างต้นแล้วโหลดสภาพล่าสุดใหม่ทุกเครื่อง
+          engine.clear();
+          fetch(departmentId ? `/api/tree?departmentId=${departmentId}` : '/api/tree')
+            .then((r) => r.json())
+            .then((snap) => engine.setSnapshot(snap.leaves, snap.rewards))
+            .catch(() => {});
+        }
       })
       .subscribe();
 

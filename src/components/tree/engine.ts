@@ -101,6 +101,9 @@ export class TreeEngine {
 
   addLeaf(l: PublicLeaf) { this.upsertLeaf(l, true); }
 
+  /** ล้างใบ/รางวัลทั้งหมด (ใช้ตอนปิดรอบข้อมูล) */
+  clear() { this.leaves.clear(); this.rewards = []; this.drifting = []; }
+
   setLeafStatus(id: string, status: string) {
     const leaf = this.leaves.get(id);
     if (leaf) leaf.targetColor = LEAF_COLORS[status] ?? leaf.targetColor;

@@ -7,7 +7,8 @@ import { supabaseAdmin, TREE_CHANNEL } from '@/lib/supabase';
 export type TreeEvent =
   | { type: 'LEAF_ADDED'; leaf: unknown }
   | { type: 'LEAF_STATUS'; id: string; status: string }
-  | { type: 'REWARD_ADDED'; reward: unknown };
+  | { type: 'REWARD_ADDED'; reward: unknown }
+  | { type: 'RESET' }; // ปิดรอบข้อมูล — ให้ทุกเครื่องโหลดต้นไม้ใหม่
 
 export async function broadcastTree(event: TreeEvent) {
   const client = supabaseAdmin();
