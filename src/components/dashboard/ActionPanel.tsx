@@ -3,6 +3,7 @@
  * แผงซ้าย "ร่วมสร้างต้นไม้ของพวกเรา" — การ์ดปุ่ม 3 ประเภท + QR Code
  * ตามภาพต้นแบบ: 💚 คำชื่นชม / 💡 ข้อเสนอแนะ / ❤️ ข้อร้องเรียน
  */
+import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 
 function ActionCard({
@@ -28,10 +29,9 @@ export default function ActionPanel({
 }: {
   onPraise: () => void; onSuggest: () => void; onComplaint: () => void;
 }) {
-  // QR ชี้ไปหน้าที่กำลังเปิดอยู่ — หน้า /unit/xxx จะได้ QR ของหน่วยงานนั้นโดยตรง
-  const url = typeof window !== 'undefined'
-    ? window.location.href
-    : process.env.NEXT_PUBLIC_APP_URL ?? '';
+  // QR ชี้ไปหน้าที่กำลังเปิดอยู่จริงเสมอ (คำนวณฝั่งผู้ใช้หลังโหลด — ไม่ติดค่าจากตอน build)
+  const [url, setUrl] = useState('');
+  useEffect(() => { setUrl(window.location.href); }, []);
 
   return (
     <aside className="card flex flex-col gap-3 p-4">
@@ -55,7 +55,7 @@ export default function ActionPanel({
       {/* QR Code */}
       <div className="mt-1 flex items-center gap-3 rounded-2xl border border-dashed border-canopy-300/70 bg-canopy-50/60 p-3 dark:border-canopy-700 dark:bg-canopy-500/10">
         <div className="rounded-xl bg-white p-1.5 shadow-inner">
-          <QRCodeSVG value={url} size={64} fgColor="#245d33" />
+          {url ? <QRCodeSVG value={url} size={64} fgColor="#245d33" /> : <div style={{ width: 64, height: 64 }} />}
         </div>
         <div className="leading-tight">
           <p className="text-xs font-semibold text-canopy-800 dark:text-canopy-100">สแกน QR Code</p>

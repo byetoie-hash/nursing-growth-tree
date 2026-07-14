@@ -1,13 +1,13 @@
 'use client';
 /** QR Code + คัดลอกลิงก์ — ผู้ใช้สแกนแล้วส่งคำชม/ข้อร้องเรียนได้ทันที */
 import { QRCodeSVG } from 'qrcode.react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function QRShare() {
   const [copied, setCopied] = useState(false);
-  const url = typeof window !== 'undefined'
-    ? window.location.origin
-    : process.env.NEXT_PUBLIC_APP_URL ?? '';
+  // คำนวณฝั่งผู้ใช้หลังโหลดเสมอ — ไม่ติดค่าจากตอน build
+  const [url, setUrl] = useState('');
+  useEffect(() => { setUrl(window.location.origin); }, []);
 
   const copy = async () => {
     await navigator.clipboard.writeText(url);
@@ -18,7 +18,7 @@ export default function QRShare() {
   return (
     <div className="flex flex-col items-center gap-4 text-center">
       <div className="rounded-2xl bg-white p-4 shadow-inner">
-        <QRCodeSVG value={url} size={188} fgColor="#245d33" />
+        {url ? <QRCodeSVG value={url} size={188} fgColor="#245d33" /> : <div style={{ width: 188, height: 188 }} />}
       </div>
       <p className="text-sm text-slate-500 dark:text-slate-400">
         สแกนเพื่อเปิด The Nursing Growth Tree แล้วส่งคำชื่นชม ข้อเสนอแนะ หรือข้อร้องเรียนได้ทันที
