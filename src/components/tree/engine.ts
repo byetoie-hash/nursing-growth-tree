@@ -94,9 +94,9 @@ export class TreeEngine {
 
   setTheme(theme: 'light' | 'dark') { this.theme = theme; }
 
-  setSnapshot(leaves: PublicLeaf[], rewards: { kind: RewardKind; anchor: number }[]) {
+ setSnapshot(leaves: PublicLeaf[], rewards: { kind: RewardKind; anchor: number }[]) {
+    if (this.w === 0 || this.h === 0) this.resize();  // ← เพิ่มบรรทัดนี้
     leaves.forEach((l) => this.upsertLeaf(l, false));
-    this.rewards = rewards.map((r) => ({ ...r, progress: 1 }));
   }
 
   addLeaf(l: PublicLeaf) { this.upsertLeaf(l, true); }
